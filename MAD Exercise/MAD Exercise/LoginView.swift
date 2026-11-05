@@ -1,5 +1,5 @@
 //
-//  ContentView.swift
+//  LoginView.swift
 //  MAD Exercise
 //
 //  Created by Gustavo Podzuweit on 28.09.26.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct ContentView: View {
+struct LoginView: View {
     private enum Field {
         case email
         case password
@@ -19,6 +19,8 @@ struct ContentView: View {
     @State private var showValidationError: Bool = false
     @State private var showLoginResultAlert: Bool = false
     @State private var loginResultMessage: String = ""
+    @State private var loggedInUser: User?
+    @State private var showCountries: Bool = false
     @State private var isLoggingIn: Bool = false
     @FocusState private var focusedField: Field?
 
@@ -79,6 +81,12 @@ struct ContentView: View {
         }
         .padding()
         .disabled(isLoggingIn)
+        .toolbar(.hidden, for: .navigationBar)
+        .navigationDestination(isPresented: $showCountries) {
+            if let loggedInUser {
+                CountriesView(user: loggedInUser)
+            }
+        }
         .alert("Login", isPresented: $showLoginResultAlert) {
             Button("OK", role: .cancel) {
             }
@@ -99,8 +107,12 @@ struct ContentView: View {
             isLoggingIn = false
 
             if let user {
-                loginResultMessage = "You are now logged in as \(user.email)."
-            } else if let error {
+                loggedInUser = user
+                showCountries = true
+                return
+            }
+
+            if let error {
                 switch error {
                 case .serializationFailed:
                     loginResultMessage = "Something went wrong preparing your request. Please try again."
@@ -125,5 +137,7 @@ struct ContentView: View {
 }
 
 #Preview {
-    ContentView()
+    NavigationStack {
+        LoginView()
+    }
 }
