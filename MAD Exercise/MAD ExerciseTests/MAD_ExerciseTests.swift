@@ -106,3 +106,51 @@ struct CountryDecodingTests {
         #expect(container.documents.map(\.ID) == ["oAgZVEWEOoJKdlNvYTSa", "second"])
     }
 }
+
+struct CountryDisplayTests {
+    private func country(continent: String = "EU", phone: String = "43", languages: [String] = ["de"]) throws -> Country {
+        let values = languages.map { #"{"stringValue": "\#($0)"}"# }.joined(separator: ",")
+        let json = """
+        {"name": "projects/x/documents/countries/id1",
+         "fields": {"currency": {"stringValue": "EUR"}, "native": {"stringValue": "n"},
+                    "name": {"stringValue": "Name"}, "capital": {"stringValue": "Cap"},
+                    "continent": {"stringValue": "\(continent)"}, "phone": {"stringValue": "\(phone)"},
+                    "languages": {"arrayValue": {"values": [\(values)]}}},
+         "createTime": "2026-08-22T19:40:40.030617Z", "updateTime": "2026-08-22T19:40:40.030617Z"}
+        """
+        return try JSONDecoder.firestore().decode(Country.self, from: Data(json.utf8))
+    }
+
+    @Test(arguments: [("AF", "Africa"), ("AN", "Antarctica"), ("AS", "Asia"), ("EU", "Europe"),
+                      ("NA", "North America"), ("OC", "Oceania"), ("SA", "South America"), ("XX", "XX")])
+    func continentName(code: String, expected: String) throws {
+        #expect(try country(continent: code).continentName == expected)
+    }
+
+    @Test func phonePrefixAddsPlus() throws {
+        #expect(try country(phone: "43").phonePrefix == "+43")
+        #expect(try country(phone: "1684").phonePrefix == "+1684")
+    }
+
+    @Test func languageNamesUseLocaleAndKeepCode() throws {
+        let english = Locale(identifier: "en")
+        #expect(try country(languages: ["de", "af"]).languageNames(locale: english) == ["German (de)", "Afrikaans (af)"])
+        #expect(try country(languages: ["de"]).languageNames(locale: Locale(identifier: "de")) == ["Deutsch (de)"])
+    }
+
+    @Test func unknownLanguageCodeFallsBackToCode() throws {
+        #expect(try country(languages: ["zz"]).languageNames(locale: Locale(identifier: "en")) == ["zz"])
+    }
+
+    @Test func noLanguagesGivesEmptyList() throws {
+        #expect(try country(languages: []).languageNames().isEmpty)
+    }
+
+    @Test func manyLanguagesAreAllKeptInOrder() throws {
+        let codes = ["af", "en", "nr", "st", "ss", "tn", "ts", "ve", "xh", "zu"]
+        let names = try country(languages: codes).languageNames(locale: Locale(identifier: "en"))
+        #expect(names.count == 10)
+        #expect(names.first == "Afrikaans (af)")
+        #expect(names.last == "Zulu (zu)")
+    }
+}

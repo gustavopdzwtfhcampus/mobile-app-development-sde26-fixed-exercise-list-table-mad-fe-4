@@ -31,12 +31,16 @@ struct CountriesView: View {
                 ContentUnavailableView("No countries", systemImage: "globe")
             } else {
                 List(countries, id: \.ID) { country in
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(country.name)
-                            .font(.headline)
-                        Text(country.capital)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                    NavigationLink {
+                        CountryDetailView(country: country)
+                    } label: {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(country.name)
+                                .font(.headline)
+                            Text(country.capital)
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
             }
@@ -49,6 +53,8 @@ struct CountriesView: View {
                 Button("Try Again") {
                     loadCountries()
                 }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
             }
         } else {
             ProgressView("Loading countries…")
