@@ -6,6 +6,7 @@
 import SwiftUI
 
 struct CountriesView: View {
+    @Environment(Networking.self) private var networking
     let user: User
 
     var body: some View {
@@ -23,4 +24,5 @@ struct CountriesView: View {
                                  registered: true,
                                  refreshToken: "refresh"))
     }
+    .environment(Networking())
 }

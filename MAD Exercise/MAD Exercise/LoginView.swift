@@ -13,7 +13,7 @@ struct LoginView: View {
         case password
     }
 
-    @State private var networking = Networking()
+    @Environment(Networking.self) private var networking
     @State private var email: String = "mad-fe@mad.at"
     @State private var password: String = "madmad"
     @State private var showValidationError: Bool = false
@@ -140,4 +140,5 @@ struct LoginView: View {
     NavigationStack {
         LoginView()
     }
+    .environment(Networking())
 }

@@ -4,7 +4,11 @@
 //
 
 import Foundation
+import Observation
 
+/// @Observable only so it can be shared via SwiftUI's typed environment
+/// (`.environment(_:)` / `@Environment(Networking.self)`); it has no state to observe.
+@Observable
 final class Networking {
     private let session = URLSession(configuration: .default)
     private let apiKey = "AIzaSyDeLs8S6Hpy642JUPC3Pft-xVx8Ocs-uXY"
