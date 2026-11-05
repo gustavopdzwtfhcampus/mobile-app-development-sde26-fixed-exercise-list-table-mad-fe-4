@@ -35,6 +35,7 @@ nonisolated final class StubURLProtocol: URLProtocol {
 }
 
 @Suite(.serialized)
+@MainActor
 struct NetworkingTests {
     private let user = User(localId: "id", email: "mad-fe@mad.at", displayName: "",
                             idToken: "TOKEN123", registered: true, refreshToken: "refresh")
@@ -148,7 +149,8 @@ struct NetworkingTests {
         #expect(result.error == .unexpectedResponseFormat)
     }
 
-    @Test(arguments: [URLError.notConnectedToInternet, URLError.networkConnectionLost, URLError.timedOut])
+    @Test(arguments: [URLError.notConnectedToInternet, URLError.networkConnectionLost, URLError.timedOut,
+                  URLError.cannotFindHost, URLError.cannotConnectToHost, URLError.dnsLookupFailed, URLError.dataNotAllowed])
     func offlineMapsToNetworkUnavailable(code: URLError.Code) async {
         let networking = makeNetworking()
         StubURLProtocol.handler = { _ in (nil, nil, URLError(code)) }
@@ -234,6 +236,7 @@ struct NetworkingTests {
         ("EMAIL_NOT_FOUND", NetworkingError.emailNotFound),
         ("INVALID_PASSWORD", NetworkingError.wrongPassword),
         ("INVALID_LOGIN_CREDENTIALS", NetworkingError.invalidCredentials),
+        ("TOO_MANY_ATTEMPTS_TRY_LATER", NetworkingError.tooManyAttempts),
         ("SOMETHING_NEW", NetworkingError.serverError(400)),
     ])
     func loginMapsFirebaseMessages(message: String, expected: NetworkingError) async {
@@ -262,7 +265,8 @@ struct NetworkingTests {
         #expect(await login(networking).error == .unexpectedResponseFormat)
     }
 
-    @Test(arguments: [URLError.notConnectedToInternet, URLError.networkConnectionLost, URLError.timedOut])
+    @Test(arguments: [URLError.notConnectedToInternet, URLError.networkConnectionLost, URLError.timedOut,
+                  URLError.cannotFindHost, URLError.cannotConnectToHost, URLError.dnsLookupFailed, URLError.dataNotAllowed])
     func loginOfflineMapsToNetworkUnavailable(code: URLError.Code) async {
         let networking = makeNetworking()
         StubURLProtocol.handler = { _ in (nil, nil, URLError(code)) }
@@ -302,6 +306,7 @@ struct NetworkingErrorMessageTests {
         (.emailNotFound, "Email or password is incorrect."),
         (.wrongPassword, "Email or password is incorrect."),
         (.invalidCredentials, "Email or password is incorrect."),
+        (.tooManyAttempts, "Too many login attempts. Please wait a few minutes and try again."),
         (.networkUnavailable("x"), "You appear to be offline. Please check your connection and try again."),
         (.unexpectedResponseFormat, "Received an unexpected response from the server. Please try again."),
         (.serverError(500), "The server ran into a problem. Please try again later."),

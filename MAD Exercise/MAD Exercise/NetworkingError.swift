@@ -21,6 +21,9 @@ enum NetworkingError: Error, Equatable {
     /// API message INVALID_LOGIN_CREDENTIALS — what this project actually returns
     /// for both an unknown email and a wrong password.
     case invalidCredentials
+    /// API message TOO_MANY_ATTEMPTS_TRY_LATER — Firebase temporarily blocks logins
+    /// after repeated failed attempts, even with the correct password.
+    case tooManyAttempts
     /// The request couldn't reach the server at all (offline, timed out, ...).
     case networkUnavailable(String)
     /// The response body wasn't decodable as either User or ResponseError.
@@ -45,6 +48,8 @@ extension NetworkingError {
             "Please enter a valid email address."
         case .emailNotFound, .wrongPassword, .invalidCredentials:
             "Email or password is incorrect."
+        case .tooManyAttempts:
+            "Too many login attempts. Please wait a few minutes and try again."
         case .networkUnavailable:
             "You appear to be offline. Please check your connection and try again."
         case .unexpectedResponseFormat:

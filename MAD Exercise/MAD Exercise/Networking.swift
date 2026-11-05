@@ -81,6 +81,8 @@ final class Networking {
                 finish(nil, .wrongPassword)
             case "INVALID_LOGIN_CREDENTIALS":
                 finish(nil, .invalidCredentials)
+            case "TOO_MANY_ATTEMPTS_TRY_LATER":
+                finish(nil, .tooManyAttempts)
             default:
                 finish(nil, .serverError(httpResponse.statusCode))
             }
@@ -149,7 +151,11 @@ final class Networking {
         switch error.code {
         case URLError.notConnectedToInternet.rawValue,
              URLError.networkConnectionLost.rawValue,
-             URLError.timedOut.rawValue:
+             URLError.timedOut.rawValue,
+             URLError.cannotFindHost.rawValue,
+             URLError.cannotConnectToHost.rawValue,
+             URLError.dnsLookupFailed.rawValue,
+             URLError.dataNotAllowed.rawValue:
             return .networkUnavailable(error.localizedDescription)
         default:
             return .unknown(error.localizedDescription)
