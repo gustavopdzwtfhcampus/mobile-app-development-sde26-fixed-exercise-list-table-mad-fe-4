@@ -29,6 +29,7 @@ struct LoginView: View {
             VStack(alignment: .leading, spacing: 16) {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Email")
+                        .accessibilityHidden(true)  // the field carries this as its accessibility label
                     TextField("yourname@example.com", text: $email)
                         .textFieldStyle(.roundedBorder)
                         .textContentType(.emailAddress)
@@ -37,6 +38,7 @@ struct LoginView: View {
                         .autocorrectionDisabled()
                         .submitLabel(.next)
                         .focused($focusedField, equals: .email)
+                        .accessibilityLabel("Email")
                         .onSubmit {
                             focusedField = .password
                         }
@@ -44,11 +46,13 @@ struct LoginView: View {
 
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Password")
+                        .accessibilityHidden(true)  // the field carries this as its accessibility label
                     SecureField("Your password", text: $password)
                         .textFieldStyle(.roundedBorder)
                         .textContentType(.password)
                         .submitLabel(.go)
                         .focused($focusedField, equals: .password)
+                        .accessibilityLabel("Password")
                         .onSubmit {
                             login()
                         }
