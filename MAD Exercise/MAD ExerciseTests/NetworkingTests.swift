@@ -1,5 +1,5 @@
 //
-//  NetworkingCountriesTests.swift
+//  NetworkingTests.swift
 //  MAD ExerciseTests
 //
 
@@ -35,7 +35,7 @@ nonisolated final class StubURLProtocol: URLProtocol {
 }
 
 @Suite(.serialized)
-struct NetworkingCountriesTests {
+struct NetworkingTests {
     private let user = User(localId: "id", email: "mad-fe@mad.at", displayName: "",
                             idToken: "TOKEN123", registered: true, refreshToken: "refresh")
 
@@ -171,6 +171,117 @@ struct NetworkingCountriesTests {
             return
         }
     }
+
+    // MARK: - login
+
+    private func login(_ networking: Networking, email: String = "mad-fe@mad.at", password: String = "madmad")
+        async -> (user: User?, error: NetworkingError?, onMain: Bool, calls: Int) {
+        await withCheckedContinuation { continuation in
+            var calls = 0
+            networking.login(email: email, password: password) { user, error in
+                calls += 1
+                continuation.resume(returning: (user, error, Thread.isMainThread, calls))
+            }
+        }
+    }
+
+    private func errorBody(_ message: String, code: Int = 400) -> String {
+        #"{"error": {"code": \#(code), "message": "\#(message)", "errors": [{"message": "\#(message)", "domain": "global", "reason": "invalid"}]}}"#
+    }
+
+    @Test func loginSuccessReturnsUserOnMainThread() async {
+        let networking = makeNetworking()
+        respond(status: 200, body: #"{"localId": "L1", "email": "mad-fe@mad.at", "displayName": "", "idToken": "T", "registered": true, "refreshToken": "R"}"#)
+
+        let result = await login(networking)
+
+        #expect(result.user?.idToken == "T")
+        #expect(result.user?.email == "mad-fe@mad.at")
+        #expect(result.error == nil)
+        #expect(result.onMain)
+        #expect(result.calls == 1)
+    }
+
+    @Test func loginSendsPostWithJSONBody() async throws {
+        let networking = makeNetworking()
+        respond(status: 200, body: "{}")
+
+        _ = await login(networking, email: "a@b.at", password: "pw")
+
+        let request = try #require(StubURLProtocol.requests.first)
+        #expect(request.httpMethod == "POST")
+        #expect(request.value(forHTTPHeaderField: "Content-Type") == "application/json")
+        #expect(request.url?.host() == "identitytoolkit.googleapis.com")
+        // URLSession hands the body to the protocol as a stream.
+        let stream = try #require(request.httpBodyStream)
+        stream.open()
+        defer { stream.close() }
+        var data = Data()
+        var buffer = [UInt8](repeating: 0, count: 1024)
+        while stream.hasBytesAvailable {
+            let count = stream.read(&buffer, maxLength: buffer.count)
+            if count <= 0 { break }
+            data.append(buffer, count: count)
+        }
+        let body = try #require(try JSONSerialization.jsonObject(with: data) as? [String: Any])
+        #expect(body["email"] as? String == "a@b.at")
+        #expect(body["password"] as? String == "pw")
+        #expect(body["returnSecureToken"] as? Bool == true)
+    }
+
+    @Test(arguments: [
+        ("INVALID_EMAIL", NetworkingError.invalidEmailFormat),
+        ("EMAIL_NOT_FOUND", NetworkingError.emailNotFound),
+        ("INVALID_PASSWORD", NetworkingError.wrongPassword),
+        ("INVALID_LOGIN_CREDENTIALS", NetworkingError.invalidCredentials),
+        ("SOMETHING_NEW", NetworkingError.serverError(400)),
+    ])
+    func loginMapsFirebaseMessages(message: String, expected: NetworkingError) async {
+        let networking = makeNetworking()
+        respond(status: 400, body: errorBody(message))
+
+        let result = await login(networking)
+
+        #expect(result.user == nil)
+        #expect(result.error == expected)
+        #expect(result.onMain)
+        #expect(result.calls == 1)
+    }
+
+    @Test func loginUndecodableErrorBodyIsServerError() async {
+        let networking = makeNetworking()
+        respond(status: 500, body: "<html>oops</html>")
+
+        #expect(await login(networking).error == .serverError(500))
+    }
+
+    @Test func loginMalformedSuccessBodyIsUnexpectedFormat() async {
+        let networking = makeNetworking()
+        respond(status: 200, body: #"{"unexpected": true}"#)
+
+        #expect(await login(networking).error == .unexpectedResponseFormat)
+    }
+
+    @Test(arguments: [URLError.notConnectedToInternet, URLError.networkConnectionLost, URLError.timedOut])
+    func loginOfflineMapsToNetworkUnavailable(code: URLError.Code) async {
+        let networking = makeNetworking()
+        StubURLProtocol.handler = { _ in (nil, nil, URLError(code)) }
+
+        guard case .networkUnavailable = await login(networking).error else {
+            Issue.record("expected networkUnavailable")
+            return
+        }
+    }
+
+    @Test func loginOtherTransportErrorMapsToUnknown() async {
+        let networking = makeNetworking()
+        StubURLProtocol.handler = { _ in (nil, nil, URLError(.badServerResponse)) }
+
+        guard case .unknown = await login(networking).error else {
+            Issue.record("expected unknown")
+            return
+        }
+    }
 }
 
 struct FirestoreErrorDecodingTests {
@@ -181,5 +292,23 @@ struct FirestoreErrorDecodingTests {
         #expect(error.code == 401)
         #expect(error.message == "m")
         #expect(error.status == "UNAUTHENTICATED")
+    }
+}
+
+struct NetworkingErrorMessageTests {
+    @Test(arguments: [
+        (NetworkingError.serializationFailed, "Something went wrong preparing your request. Please try again."),
+        (.invalidEmailFormat, "Please enter a valid email address."),
+        (.emailNotFound, "Email or password is incorrect."),
+        (.wrongPassword, "Email or password is incorrect."),
+        (.invalidCredentials, "Email or password is incorrect."),
+        (.networkUnavailable("x"), "You appear to be offline. Please check your connection and try again."),
+        (.unexpectedResponseFormat, "Received an unexpected response from the server. Please try again."),
+        (.serverError(500), "The server ran into a problem. Please try again later."),
+        (.unauthorized, "You are not authorized to view this. Please log in again."),
+        (.unknown(nil), "An unexpected error occurred. Please try again."),
+    ])
+    func userMessage(error: NetworkingError, expected: String) {
+        #expect(error.userMessage == expected)
     }
 }
