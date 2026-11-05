@@ -5,7 +5,7 @@
 
 import Foundation
 
-enum NetworkingError: Error {
+enum NetworkingError: Error, Equatable {
     /// JSONSerialization.data(withJSONObject:) threw while building the request body.
     case serializationFailed
     /// API message INVALID_EMAIL — the typed text isn't a valid email address.
@@ -28,6 +28,9 @@ enum NetworkingError: Error {
     /// Non-2xx response whose error body didn't decode, or whose message we
     /// don't have a specific case for.
     case serverError(Int)
+    /// Firestore rejected the request as unauthenticated (401) or not permitted
+    /// (403), e.g. because the ID token is missing, invalid or expired.
+    case unauthorized
     /// Anything else we didn't anticipate.
     case unknown(String?)
 }

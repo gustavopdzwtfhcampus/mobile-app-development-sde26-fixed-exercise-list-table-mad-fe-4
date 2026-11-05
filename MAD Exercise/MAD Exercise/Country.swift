@@ -10,6 +10,16 @@ import Foundation
 
 nonisolated struct DocumentsContainer: Decodable {
     var documents: [Country]
+
+    private enum CodingKeys: String, CodingKey {
+        case documents
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        // Firestore omits `documents` entirely when the collection is empty.
+        documents = try container.decodeIfPresent([Country].self, forKey: .documents) ?? []
+    }
 }
 
 /// One Firestore document from the `countries` collection. Firestore wraps every

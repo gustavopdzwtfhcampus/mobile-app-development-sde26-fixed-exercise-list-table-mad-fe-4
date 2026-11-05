@@ -124,7 +124,7 @@ struct LoginView: View {
                     loginResultMessage = "You appear to be offline. Please check your connection and try again."
                 case .unexpectedResponseFormat:
                     loginResultMessage = "Received an unexpected response from the server. Please try again."
-                case .serverError:
+                case .serverError, .unauthorized:
                     loginResultMessage = "The server ran into a problem. Please try again later."
                 case .unknown:
                     loginResultMessage = "An unexpected error occurred. Please try again."
