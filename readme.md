@@ -2,6 +2,8 @@
 
 > AI assistance (Claude) was used while working on this exercise to:
 > - copy over the project from the previous exercise (networking)
+> - plan the exercise steps
+> - verify the implementation by running temporary UI tests in the simulator (these are not kept in the repo)
 > - answer questions on topics relevant to this exercise
 
 ## Test credentials (Firebase REST API, carried over from exercise 3)
