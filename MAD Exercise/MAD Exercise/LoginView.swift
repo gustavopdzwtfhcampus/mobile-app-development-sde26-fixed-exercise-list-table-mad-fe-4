@@ -25,61 +25,62 @@ struct LoginView: View {
     @FocusState private var focusedField: Field?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Email")
-                TextField("yourname@example.com", text: $email)
-                    .textFieldStyle(.roundedBorder)
-                    .textContentType(.emailAddress)
-                    .keyboardType(.emailAddress)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .submitLabel(.next)
-                    .focused($focusedField, equals: .email)
-                    .onSubmit {
-                        focusedField = .password
-                    }
-            }
-
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Password")
-                SecureField("Your password", text: $password)
-                    .textFieldStyle(.roundedBorder)
-                    .textContentType(.password)
-                    .submitLabel(.go)
-                    .focused($focusedField, equals: .password)
-                    .onSubmit {
-                        login()
-                    }
-            }
-
-            if showValidationError {
-                Text("Please fill in both email and password.")
-                    .foregroundStyle(.red)
-                    .font(.footnote)
-            }
-
-            HStack {
-                Spacer()
-                Button("Login") {
-                    login()
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Email")
+                    TextField("yourname@example.com", text: $email)
+                        .textFieldStyle(.roundedBorder)
+                        .textContentType(.emailAddress)
+                        .keyboardType(.emailAddress)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .submitLabel(.next)
+                        .focused($focusedField, equals: .email)
+                        .onSubmit {
+                            focusedField = .password
+                        }
                 }
-                Spacer()
-            }
-            .padding(.top, 8)
 
-            if isLoggingIn {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Password")
+                    SecureField("Your password", text: $password)
+                        .textFieldStyle(.roundedBorder)
+                        .textContentType(.password)
+                        .submitLabel(.go)
+                        .focused($focusedField, equals: .password)
+                        .onSubmit {
+                            login()
+                        }
+                }
+
+                if showValidationError {
+                    Text("Please fill in both email and password.")
+                        .foregroundStyle(.red)
+                        .font(.footnote)
+                }
+
                 HStack {
                     Spacer()
-                    ProgressView()
+                    Button("Login") {
+                        login()
+                    }
                     Spacer()
                 }
                 .padding(.top, 8)
-            }
 
-            Spacer()
+                if isLoggingIn {
+                    HStack {
+                        Spacer()
+                        ProgressView()
+                        Spacer()
+                    }
+                    .padding(.top, 8)
+                }
+            }
+            .padding()
         }
-        .padding()
+        .scrollBounceBehavior(.basedOnSize)
         .disabled(isLoggingIn)
         .toolbar(.hidden, for: .navigationBar)
         .navigationDestination(isPresented: $showCountries) {
@@ -113,22 +114,7 @@ struct LoginView: View {
             }
 
             if let error {
-                switch error {
-                case .serializationFailed:
-                    loginResultMessage = "Something went wrong preparing your request. Please try again."
-                case .invalidEmailFormat:
-                    loginResultMessage = "Please enter a valid email address."
-                case .emailNotFound, .wrongPassword, .invalidCredentials:
-                    loginResultMessage = "Email or password is incorrect."
-                case .networkUnavailable:
-                    loginResultMessage = "You appear to be offline. Please check your connection and try again."
-                case .unexpectedResponseFormat:
-                    loginResultMessage = "Received an unexpected response from the server. Please try again."
-                case .serverError, .unauthorized:
-                    loginResultMessage = "The server ran into a problem. Please try again later."
-                case .unknown:
-                    loginResultMessage = "An unexpected error occurred. Please try again."
-                }
+                loginResultMessage = error.userMessage
             }
 
             showLoginResultAlert = true

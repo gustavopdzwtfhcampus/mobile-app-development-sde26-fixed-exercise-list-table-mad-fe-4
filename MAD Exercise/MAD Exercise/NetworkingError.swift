@@ -34,3 +34,27 @@ enum NetworkingError: Error, Equatable {
     /// Anything else we didn't anticipate.
     case unknown(String?)
 }
+
+extension NetworkingError {
+    /// Message suitable for showing to the user.
+    var userMessage: String {
+        switch self {
+        case .serializationFailed:
+            "Something went wrong preparing your request. Please try again."
+        case .invalidEmailFormat:
+            "Please enter a valid email address."
+        case .emailNotFound, .wrongPassword, .invalidCredentials:
+            "Email or password is incorrect."
+        case .networkUnavailable:
+            "You appear to be offline. Please check your connection and try again."
+        case .unexpectedResponseFormat:
+            "Received an unexpected response from the server. Please try again."
+        case .serverError:
+            "The server ran into a problem. Please try again later."
+        case .unauthorized:
+            "You are not authorized to view this. Please log in again."
+        case .unknown:
+            "An unexpected error occurred. Please try again."
+        }
+    }
+}
