@@ -5,7 +5,7 @@
 
 import Foundation
 
-struct User: Codable {
+nonisolated struct User: Codable {
     let localId: String
     let email: String
     let displayName: String

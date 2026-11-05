@@ -10,8 +10,8 @@ import Foundation
 ///
 /// Decodable only (not Codable) since we never need to encode this type, and a
 /// custom init(from:) under Codable would force an unused encode(to:) as well.
-struct ResponseError: Decodable {
-    struct Detail: Decodable {
+nonisolated struct ResponseError: Decodable {
+    nonisolated struct Detail: Decodable {
         let message: String
         let domain: String
         let reason: String
